@@ -58,6 +58,7 @@ module.exports.addLike = (req, res) => {
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
+    .orFail()
     .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.name === 'DocumentNotFoundError') {
@@ -84,6 +85,7 @@ module.exports.deleteLike = (req, res) => {
     { $pull: { likes: req.user._id } },
     { new: true },
   )
+    .orFail()
     .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.name === 'DocumentNotFoundError') {
