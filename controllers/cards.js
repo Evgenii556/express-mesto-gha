@@ -33,9 +33,7 @@ function deleteCard(req, res, next) {
   })
     .then((card) => {
       if (!card) {
-        return res
-          .status(404)
-          .send({ message: 'Карточки не существует' });
+        throw new NotFoundError('Карточки не существует');
       }
       const { owner: cardOwnerId } = card;
       if (cardOwnerId.valueOf() !== userId) {
@@ -69,9 +67,7 @@ function addLike(req, res, next) {
   )
     .then((card) => {
       if (card) return res.send({ data: card });
-      return res
-        .status(404)
-        .send({ message: 'Карточки не существует' });
+      throw new NotFoundError('Карточки не существует');
     })
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
@@ -99,9 +95,7 @@ function deleteLike(req, res, next) {
   )
     .then((card) => {
       if (card) return res.send({ data: card });
-      return res
-        .status(404)
-        .send({ message: 'Карточки не существует' });
+      throw new NotFoundError('Карточки не существует');
     })
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
