@@ -70,6 +70,7 @@ function getUserInfoId(req, res, next) {
   const { id } = req.params;
 
   User.findById(id)
+    .orFail()
     .then((user) => {
       if (user) return res.send({ user });
       throw new NotFoundError('Запрашиваемый пользователь не найден');
@@ -87,6 +88,7 @@ function getUserInfo(req, res, next) {
   const { userId } = req.user;
 
   User.findById(userId)
+    .orFail()
     .then((user) => {
       if (user) return res.send({ user });
       throw new NotFoundError('Запрашиваемый пользователь не найден');
