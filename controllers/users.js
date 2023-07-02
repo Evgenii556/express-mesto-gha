@@ -1,104 +1,166 @@
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const { SecretKey } = require('../utils/constants');
 
-module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.status(201).send(user))
+const AuthError = require('../errors/AuthError');
+const NotFoundError = require('../errors/NotFoundError');
+const DuplicateError = require('../errors/DuplicateError');
+const InvalidError = require('../errors/InvalidError');
+
+function registrationUser(req, res, next) {
+  const {
+    email, password, name, about, avatar,
+  } = req.body;
+
+  bcrypt
+    .hash(password, 10)
+    .then((hash) => User.create({
+      email,
+      password: hash,
+      name,
+      about,
+      avatar,
+    }))
+    .then((user) => {
+      const { _id } = user;
+
+      return res.status(201).send({
+        email,
+        name,
+        about,
+        avatar,
+        _id,
+      });
+    })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Некорректный запрос к серверу при создании пользователя',
-        });
+      if (err.code === 11000) {
+        next(new DuplicateError('Пользователь уже зарегистрирован'));
+      } else if (err.name === 'ValidationError') {
+        next(new InvalidError('Некорректный запрос к серверу при регистрации пользователя'));
       } else {
-        res
-          .status(500)
-          .send({
-            message: 'Сервер не может обработать запрос',
-          });
+        next(err);
       }
     });
-};
+}
 
-module.exports.getUsersInfo = (_, res) => {
+function loginUser(req, res, next) {
+  const { email, password } = req.body;
+
+  User.findUserByCredentials(email, password)
+    .then(({ _id: userId }) => {
+      if (userId) {
+        const token = jwt.sign({ userId }, SecretKey, {
+          expiresIn: '7d',
+        });
+        return res.send({ _id: token });
+      }
+      throw new AuthError('Некорректные почта или пароль');
+    })
+    .catch(next);
+}
+
+function getUsersInfo(_, res, next) {
   User.find({})
-    .then((users) => res.send(users))
-    .catch(() => res.status(500).send({
-      message: 'Сервер не может обработать запрос',
-    }));
-};
+    .then((users) => res.send({ users }))
+    .catch(next);
+}
 
-module.exports.getUserInfoId = (req, res) => {
-  User.findById(req.params.userId)
-    .orFail()
-    .then((user) => res.status(200).send(user))
+function getUserInfoId(req, res, next) {
+  const { id } = req.params;
+
+  User.findById(id)
+    .then((user) => {
+      if (user) return res.send({ user });
+      throw new NotFoundError('Запрашиваемый пользователь не найден');
+    })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(400).send({
-          message: 'Некорректный запрос к серверу при поиске пользователя',
-        });
+        next(new InvalidError('Передача некорректного id'));
+      } else {
+        next(err);
       }
-      if (err.name === 'DocumentNotFoundError') {
-        return res.status(404).send({
-          message: 'Запрашиваемый пользователь не найден',
-        });
-      }
-      return res
-        .status(500)
-        .send({
-          message: 'Сервер не может обработать запрос',
-        });
     });
-};
+}
 
-module.exports.editAvatar = (req, res) => {
-  const { avatar } = req.body;
+function getUserInfo(req, res, next) {
+  const { userId } = req.user;
 
-  User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
-    .orFail()
-    .then((user) => res.status(200).send(user))
+  User.findById(userId)
+    .then((user) => {
+      if (user) return res.send({ user });
+      throw new NotFoundError('Запрашиваемый пользователь не найден');
+    })
     .catch((err) => {
-      if (err.name === 'DocumentNotFoundError') {
-        return res.status(404).send({
-          message: 'Запрашиваемый пользователь не найден',
-        });
+      if (err.name === 'CastError') {
+        next(new InvalidError('Передача некорректного id'));
+      } else {
+        next(err);
       }
-      if (err.name === 'ValidationError') {
-        const validationErrors = Object.values(err.errors).map((error) => error.message);
-        return res.status(400).send({
-          message: 'Некорректный запрос к серверу при обновлении аватара',
-          validationErrors,
-        });
-      }
-      return res.status(500).send({
-        message: 'Сервер не может обработать запрос',
-      });
     });
-};
+}
 
-module.exports.editUserInfo = (req, res) => {
+function editUserInfo(req, res, next) {
   const { name, about } = req.body;
+  const { userId } = req.user;
 
   User.findByIdAndUpdate(
-    req.user._id,
-    { name, about },
-    { new: true, runValidators: true },
+    userId,
+    {
+      name,
+      about,
+    },
+    {
+      new: true,
+      runValidators: true,
+    },
   )
-    .then((user) => res.status(200).send(user))
+    .then((user) => {
+      if (user) return res.send({ user });
+      throw new NotFoundError('Запрашиваемый пользователь не найден');
+    })
     .catch((err) => {
-      if (err.name === 'DocumentNotFoundError') {
-        return res.status(404).send({
-          message: 'Запрашиваемый пользователь не найден',
-        });
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        next(new InvalidError('Некорректный запрос к серверу при обновления профиля'));
+      } else {
+        next(err);
       }
-      if (err.name === 'ValidationError') {
-        const validationErrors = Object.values(err.errors).map((error) => error.message);
-        return res.status(400).send({
-          message: 'Некорректный запрос к серверу при обновлении профиля',
-          validationErrors,
-        });
-      }
-      return res.status(500).send({
-        message: 'Сервер не может обработать запрос',
-      });
     });
+}
+
+function editAvatar(req, res, next) {
+  const { avatar } = req.body;
+  const { userId } = req.user;
+
+  User.findByIdAndUpdate(
+    userId,
+    {
+      avatar,
+    },
+    {
+      new: true,
+      runValidators: true,
+    },
+  )
+    .then((user) => {
+      if (user) return res.send({ user });
+      throw new NotFoundError('Запрашиваемый пользователь не найден');
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        next(new InvalidError('Некорректный запрос к серверу при обновления аватара'));
+      } else {
+        next(err);
+      }
+    });
+}
+
+module.exports = {
+  getUsersInfo,
+  getUserInfoId,
+  getUserInfo,
+  editUserInfo,
+  editAvatar,
+  registrationUser,
+  loginUser,
 };

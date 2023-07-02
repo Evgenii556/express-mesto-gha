@@ -1,107 +1,115 @@
 const Card = require('../models/card');
+const AccessError = require('../errors/AccessError');
+const NotFoundError = require('../errors/NotFoundError');
+const InvalidError = require('../errors/InvalidError');
 
-module.exports.getCards = (req, res) => {
+function getCards(_, res, next) {
   Card.find({})
-    .then((cards) => res.status(200).send(cards))
-    .catch(() => res.status(500).send({
-      message: 'Сервер не может обработать запрос',
-    }));
-};
+    .then((cards) => res.send({ data: cards }))
+    .catch(next);
+}
 
-module.exports.addCard = (req, res) => {
-  console.log(req.user._id);
+function addCard(req, res, next) {
   const { name, link } = req.body;
-  const owner = req.user._id;
-  Card.create({ name, link, owner })
-    .then((card) => res.status(201).send(card))
+  const { userId } = req.user;
+
+  Card.create({ name, link, owner: userId })
+    .then((card) => res.status(201).send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Некорректный запрос к серверу при добавлении карточки',
-        });
+        next(new InvalidError('Некорректный запрос к серверу при добавлении карточки'));
       } else {
-        res.status(500).send({
-          message: 'Сервер не может обработать запрос',
-        });
+        next(err);
       }
     });
-};
+}
 
-module.exports.deleteCard = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
+function deleteCard(req, res, next) {
+  const { id: cardId } = req.params;
+  const { userId } = req.user;
+
+  Card.findById({
+    _id: cardId,
+  })
     .then((card) => {
       if (!card) {
-        return res
-          .status(404)
-          .send({ message: 'Карточки не существует' });
+        throw new NotFoundError('Карточки не существует');
       }
-      return res.status(200).send(card);
+      const { owner: cardOwnerId } = card;
+      if (cardOwnerId.valueOf() !== userId) {
+        throw new AccessError('Нет прав доступа');
+      }
+      return Card.findByIdAndDelete(cardId);
+    })
+    .then((deletedCard) => {
+      if (!deletedCard) {
+        throw new NotFoundError('Данная карточка была удалена');
+      }
+      res.send({ data: deletedCard });
+    })
+    .catch(next);
+}
+
+function addLike(req, res, next) {
+  const { cardId } = req.params;
+  const { userId } = req.user;
+
+  Card.findByIdAndUpdate(
+    cardId,
+    {
+      $addToSet: {
+        likes: userId,
+      },
+    },
+    {
+      new: true,
+    },
+  )
+    .then((card) => {
+      if (card) return res.send({ data: card });
+      throw new NotFoundError('Карточки не существует');
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(400).send({
-          message: 'Некорректный запрос к серверу при удалении карточки',
-        });
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        next(new InvalidError('Некорректный запрос к серверу при установке лайка'));
       } else {
-        res
-          .status(500)
-          .send({
-            message: 'Сервер не может обработать запрос',
-          });
+        next(err);
       }
     });
-};
+}
 
-module.exports.addLike = (req, res) => {
-  Card.findByIdAndUpdate(
-    req.params.cardId,
-    { $addToSet: { likes: req.user._id } },
-    { new: true },
-  )
-    .orFail()
-    .then((card) => res.status(200).send(card))
-    .catch((err) => {
-      if (err.name === 'DocumentNotFoundError') {
-        return res
-          .status(404)
-          .send({ message: 'Карточки не существует' });
-      }
-      if (err.name === 'CastError') {
-        return res.status(400).send({
-          message: 'Некорректный запрос к серверу при установке лайка',
-        });
-      }
-      return res
-        .status(500)
-        .send({
-          message: 'Сервер не может обработать запрос',
-        });
-    });
-};
+function deleteLike(req, res, next) {
+  const { cardId } = req.params;
+  const { userId } = req.user;
 
-module.exports.deleteLike = (req, res) => {
   Card.findByIdAndUpdate(
-    req.params.cardId,
-    { $pull: { likes: req.user._id } },
-    { new: true },
+    cardId,
+    {
+      $pull: {
+        likes: userId,
+      },
+    },
+    {
+      new: true,
+    },
   )
-    .orFail()
-    .then((card) => res.status(200).send(card))
+    .then((card) => {
+      if (card) return res.send({ data: card });
+      throw new NotFoundError('Карточки не существует');
+    })
     .catch((err) => {
-      if (err.name === 'DocumentNotFoundError') {
-        return res
-          .status(404)
-          .send({ message: 'Карточки не существует' });
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        next(new InvalidError('Некорректный запрос к серверу при установке лайка'));
+      } else {
+        next(err);
       }
-      if (err.name === 'CastError') {
-        return res.status(400).send({
-          message: 'Некорректный запрос к серверу при удалении лайка',
-        });
-      }
-      return res
-        .status(500)
-        .send({
-          message: 'Сервер не может обработать запрос',
-        });
     });
+}
+
+module.exports = {
+  getCards,
+  addCard,
+  deleteCard,
+  addLike,
+  deleteLike,
 };
