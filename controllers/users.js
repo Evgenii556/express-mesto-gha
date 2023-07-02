@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { SecretKey } = require('../utils/constants');
 
-const AuthError = require('../errors/AuthError');
+// const AuthError = require('../errors/AuthError');
 // const NotFoundError = require('../errors/NotFoundError');
 const DuplicateError = require('../errors/DuplicateError');
 const InvalidError = require('../errors/InvalidError');
@@ -55,7 +55,9 @@ function loginUser(req, res, next) {
         });
         return res.send({ _id: token });
       }
-      throw new AuthError('Некорректные почта или пароль');
+      return res
+        .status(404)
+        .send({ message: 'Некорректные почта или пароль' });
     })
     .catch(next);
 }
