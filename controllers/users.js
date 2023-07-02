@@ -70,7 +70,6 @@ function getUserInfoId(req, res, next) {
   const { id } = req.params;
 
   User.findById(id)
-    .orFail()
     .then((user) => {
       if (user) return res.send({ user });
       throw new NotFoundError('Запрашиваемый пользователь не найден');
@@ -88,7 +87,6 @@ function getUserInfo(req, res, next) {
   const { userId } = req.user;
 
   User.findById(userId)
-    .orFail()
     .then((user) => {
       if (user) return res.send({ user });
       throw new NotFoundError('Запрашиваемый пользователь не найден');
@@ -123,7 +121,11 @@ function editUserInfo(req, res, next) {
     })
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
-        next(new InvalidError('Некорректный запрос к серверу при обновления профиля'));
+        next(
+          new InvalidError(
+            'Некорректный запрос к серверу при обновления профиля',
+          ),
+        );
       } else {
         next(err);
       }
@@ -150,7 +152,11 @@ function editAvatar(req, res, next) {
     })
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
-        next(new InvalidError('Некорректный запрос к серверу при обновления аватара'));
+        next(
+          new InvalidError(
+            'Некорректный запрос к серверу при обновления аватара',
+          ),
+        );
       } else {
         next(err);
       }
