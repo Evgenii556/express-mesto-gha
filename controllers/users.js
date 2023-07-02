@@ -56,8 +56,9 @@ function loginUser(req, res, next) {
         return res.send({ _id: token });
       }
       return res
-        .status(404)
+        .status(401)
         .send({ message: 'Некорректные почта или пароль' });
+      // throw new AuthError('Некорректные почта или пароль');
     })
     .catch(next);
 }
