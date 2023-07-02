@@ -121,11 +121,7 @@ function editUserInfo(req, res, next) {
     })
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
-        next(
-          new InvalidError(
-            'Некорректный запрос к серверу при обновления профиля',
-          ),
-        );
+        next(new InvalidError('Некорректный запрос к серверу при обновления профиля'));
       } else {
         next(err);
       }
@@ -152,11 +148,7 @@ function editAvatar(req, res, next) {
     })
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
-        next(
-          new InvalidError(
-            'Некорректный запрос к серверу при обновления аватара',
-          ),
-        );
+        next(new InvalidError('Некорректный запрос к серверу при обновления аватара'));
       } else {
         next(err);
       }

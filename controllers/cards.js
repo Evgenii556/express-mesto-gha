@@ -33,7 +33,9 @@ function deleteCard(req, res, next) {
   })
     .then((card) => {
       if (!card) {
-        throw new NotFoundError('Карточки не существует');
+        return res
+          .status(404)
+          .send({ message: 'Карточки не существует' });
       }
       const { owner: cardOwnerId } = card;
       if (cardOwnerId.valueOf() !== userId) {
