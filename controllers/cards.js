@@ -69,7 +69,9 @@ function addLike(req, res, next) {
   )
     .then((card) => {
       if (card) return res.send({ data: card });
-      throw new NotFoundError('Карточки не существует');
+      return res
+        .status(404)
+        .send({ message: 'Карточки не существует' });
     })
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {

@@ -4,7 +4,7 @@ const User = require('../models/user');
 const { SecretKey } = require('../utils/constants');
 
 const AuthError = require('../errors/AuthError');
-const NotFoundError = require('../errors/NotFoundError');
+// const NotFoundError = require('../errors/NotFoundError');
 const DuplicateError = require('../errors/DuplicateError');
 const InvalidError = require('../errors/InvalidError');
 
@@ -72,7 +72,9 @@ function getUserInfoId(req, res, next) {
   User.findById(id)
     .then((user) => {
       if (user) return res.send({ user });
-      throw new NotFoundError('Запрашиваемый пользователь не найден');
+      return res
+        .status(404)
+        .send({ message: 'Карточки не существует' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
@@ -89,7 +91,9 @@ function getUserInfo(req, res, next) {
   User.findById(userId)
     .then((user) => {
       if (user) return res.send({ user });
-      throw new NotFoundError('Запрашиваемый пользователь не найден');
+      return res
+        .status(404)
+        .send({ message: 'Карточки не существует' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
@@ -117,7 +121,9 @@ function editUserInfo(req, res, next) {
   )
     .then((user) => {
       if (user) return res.send({ user });
-      throw new NotFoundError('Запрашиваемый пользователь не найден');
+      return res
+        .status(404)
+        .send({ message: 'Карточки не существует' });
     })
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
@@ -144,7 +150,9 @@ function editAvatar(req, res, next) {
   )
     .then((user) => {
       if (user) return res.send({ user });
-      throw new NotFoundError('Запрашиваемый пользователь не найден');
+      return res
+        .status(404)
+        .send({ message: 'Карточки не существует' });
     })
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
