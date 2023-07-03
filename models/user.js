@@ -69,11 +69,9 @@ const userSchema = new Schema(
             if (user) {
               return bcrypt.compare(password, user.password).then((matched) => {
                 if (matched) return user;
-
                 return new AuthError('Некорректные почта или пароль');
               });
             }
-
             return new AuthError('Некорректные почта или пароль');
           });
       },
