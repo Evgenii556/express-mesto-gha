@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
+const AuthError = require('../errors/AuthError');
+
 const { linTemplate } = require('../utils/constants');
 
 const { Schema } = mongoose;
@@ -68,11 +70,11 @@ const userSchema = new Schema(
               return bcrypt.compare(password, user.password).then((matched) => {
                 if (matched) return user;
 
-                return Promise.reject();
+                return new AuthError('Некорректные почта или пароль');
               });
             }
 
-            return Promise.reject();
+            return new AuthError('Некорректные почта или пароль');
           });
       },
     },

@@ -70,7 +70,7 @@ function addLike(req, res, next) {
       throw new NotFoundError('Карточки не существует');
     })
     .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
+      if (err.name === 'CastError') {
         next(new InvalidError('Некорректный запрос к серверу при установке лайка'));
       } else {
         next(err);
@@ -98,7 +98,7 @@ function deleteLike(req, res, next) {
       throw new NotFoundError('Карточки не существует');
     })
     .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
+      if (err.name === 'CastError') {
         next(new InvalidError('Некорректный запрос к серверу при установке лайка'));
       } else {
         next(err);

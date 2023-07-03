@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { SecretKey } = require('../utils/constants');
 
-const AuthError = require('../errors/AuthError');
 const NotFoundError = require('../errors/NotFoundError');
 const DuplicateError = require('../errors/DuplicateError');
 const InvalidError = require('../errors/InvalidError');
@@ -49,13 +48,10 @@ function loginUser(req, res, next) {
 
   User.findUserByCredentials(email, password)
     .then(({ _id: userId }) => {
-      if (userId) {
-        const token = jwt.sign({ userId }, SecretKey, {
-          expiresIn: '7d',
-        });
-        return res.send({ _id: token });
-      }
-      throw new AuthError('Некорректные почта или пароль');
+      const token = jwt.sign({ userId }, SecretKey, {
+        expiresIn: '7d',
+      });
+      return res.send({ _id: token });
     })
     .catch(next);
 }
@@ -92,7 +88,7 @@ function getUserInfo(req, res, next) {
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err.name === 'ValidationError') {
         next(new InvalidError('Передача некорректного id'));
       } else {
         next(err);
@@ -120,7 +116,7 @@ function editUserInfo(req, res, next) {
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
+      if (err.name === 'ValidationError') {
         next(new InvalidError('Некорректный запрос к серверу при обновления профиля'));
       } else {
         next(err);
