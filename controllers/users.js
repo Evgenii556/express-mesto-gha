@@ -88,7 +88,7 @@ function getUserInfo(req, res, next) {
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err.name === 'CastError') {
         next(new InvalidError('Передача некорректного id'));
       } else {
         next(err);
@@ -143,7 +143,7 @@ function editAvatar(req, res, next) {
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
+      if (err.name === 'ValidationError') {
         next(new InvalidError('Некорректный запрос к серверу при обновления аватара'));
       } else {
         next(err);

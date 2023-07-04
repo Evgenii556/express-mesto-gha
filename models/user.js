@@ -23,29 +23,20 @@ const userSchema = new Schema(
       type: String,
       required: true,
       select: false,
-      validate: {
-        validator: ({ length }) => length >= 6,
-        message: 'Длина пароля должна быть от 6 символов',
-      },
     },
 
     name: {
       type: String,
       default: 'Жак-Ив Кусто',
-      validate: {
-        validator: ({ length }) => length >= 2 && length <= 30,
-        message: 'Наименование пользователя должно быть от 2 до 30 символов',
-      },
+      minlength: 2,
+      maxlength: 30,
     },
 
     about: {
       type: String,
       default: 'Исследователь',
-      validate: {
-        validator: ({ length }) => length >= 2 && length <= 30,
-        message:
-          'Информация о пользователе должна быть от 2 до 30 символов',
-      },
+      minlength: 2,
+      maxlength: 30,
     },
 
     avatar: {
