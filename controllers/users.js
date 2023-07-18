@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { SecretKey } = require('../utils/constants');
+const { NODE_ENV } = require('../utils/constants');
 
 const NotFoundError = require('../errors/NotFoundError');
 const DuplicateError = require('../errors/DuplicateError');
@@ -48,9 +49,11 @@ function loginUser(req, res, next) {
 
   User.findUserByCredentials(email, password)
     .then(({ _id: userId }) => {
-      const token = jwt.sign({ userId }, SecretKey, {
-        expiresIn: '7d',
-      });
+      const token = jwt.sign(
+        { _id: userId },
+        NODE_ENV === 'production' ? SecretKey : 'incredible-difficult-unbreakable-key',
+        { expiresIn: '7d' },
+      );
       return res.send({ _id: token });
     })
     .catch(next);
