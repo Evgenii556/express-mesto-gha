@@ -29,7 +29,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(helmet());
-app.use(cors);
 
 app.get('/crash-test', () => {
   setTimeout(() => {
