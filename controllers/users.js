@@ -88,13 +88,7 @@ function getUserInfo(req, res, next) {
       if (user) return res.send(user);
       throw new NotFoundError('Пользователь не найден');
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new InvalidError('Передача некорректного id'));
-      } else {
-        next(err);
-      }
-    });
+    .catch((err) => next(err));
 }
 
 function editUserInfo(req, res, next) {
