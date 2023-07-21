@@ -31,7 +31,7 @@ function addCard(req, res, next) {
 
 function deleteCard(req, res, next) {
   const { id: cardId } = req.params;
-  const { userId } = req.user;
+  const userId = req.user;
 
   Card.findById({
     _id: cardId,
