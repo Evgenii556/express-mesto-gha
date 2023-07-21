@@ -46,7 +46,6 @@ function registrationUser(req, res, next) {
 
 function loginUser(req, res, next) {
   const { email, password } = req.body;
-
   User.findUserByCredentials(email, password)
     .then(({ _id: userId }) => {
       const token = jwt.sign(
@@ -61,7 +60,7 @@ function loginUser(req, res, next) {
 
 function getUsersInfo(_, res, next) {
   User.find({})
-    .then((users) => res.send({ users }))
+    .then((users) => res.send(users))
     .catch(next);
 }
 
@@ -70,7 +69,7 @@ function getUserInfoId(req, res, next) {
 
   User.findById(id)
     .then((user) => {
-      if (user) return res.send({ user });
+      if (user) return res.send(user);
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {
@@ -83,11 +82,10 @@ function getUserInfoId(req, res, next) {
 }
 
 function getUserInfo(req, res, next) {
-  const { userId } = req.user;
-
+  const userId = req.user;
   User.findById(userId)
     .then((user) => {
-      if (user) return res.send({ user });
+      if (user) return res.send(user);
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {
@@ -101,8 +99,7 @@ function getUserInfo(req, res, next) {
 
 function editUserInfo(req, res, next) {
   const { name, about } = req.body;
-  const { userId } = req.user;
-
+  const userId = req.user;
   User.findByIdAndUpdate(
     userId,
     {
@@ -115,7 +112,7 @@ function editUserInfo(req, res, next) {
     },
   )
     .then((user) => {
-      if (user) return res.send({ user });
+      if (user) return res.send(user);
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {
@@ -129,7 +126,7 @@ function editUserInfo(req, res, next) {
 
 function editAvatar(req, res, next) {
   const { avatar } = req.body;
-  const { userId } = req.user;
+  const userId = req.user;
 
   User.findByIdAndUpdate(
     userId,
@@ -142,7 +139,7 @@ function editAvatar(req, res, next) {
     },
   )
     .then((user) => {
-      if (user) return res.send({ user });
+      if (user) return res.send(user);
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {

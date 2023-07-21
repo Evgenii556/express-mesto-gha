@@ -3,21 +3,26 @@ const AccessError = require('../errors/AccessError');
 const NotFoundError = require('../errors/NotFoundError');
 const InvalidError = require('../errors/InvalidError');
 
-function getCards(_, res, next) {
+function getCards(req, res, next) {
   Card.find({})
-    .then((cards) => res.send({ data: cards }))
+    .then((cards) => res.send(cards))
     .catch(next);
 }
 
 function addCard(req, res, next) {
-  const { name, link } = req.body;
-  const { userId } = req.user;
+  const userId = req.user;
 
-  Card.create({ name, link, owner: userId })
-    .then((card) => res.status(201).send({ data: card }))
+  const {
+    name, link, owner = userId,
+  } = req.body;
+
+  Card.create({
+    name, link, owner,
+  })
+    .then((card) => res.status(201).send(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new InvalidError('Некорректный запрос к серверу при добавлении карточки'));
+        next(new InvalidError(err.message));
       } else {
         next(err);
       }
@@ -45,14 +50,14 @@ function deleteCard(req, res, next) {
       if (!deletedCard) {
         throw new NotFoundError('Данная карточка была удалена');
       }
-      res.send({ data: deletedCard });
+      res.send(deletedCard);
     })
     .catch(next);
 }
 
 function addLike(req, res, next) {
   const { cardId } = req.params;
-  const { userId } = req.user;
+  const userId = req.user;
 
   Card.findByIdAndUpdate(
     cardId,
@@ -66,7 +71,7 @@ function addLike(req, res, next) {
     },
   )
     .then((card) => {
-      if (card) return res.send({ data: card });
+      if (card) return res.send(card);
       throw new NotFoundError('Карточки не существует');
     })
     .catch((err) => {
@@ -80,7 +85,7 @@ function addLike(req, res, next) {
 
 function deleteLike(req, res, next) {
   const { cardId } = req.params;
-  const { userId } = req.user;
+  const userId = req.user;
 
   Card.findByIdAndUpdate(
     cardId,
@@ -94,7 +99,7 @@ function deleteLike(req, res, next) {
     },
   )
     .then((card) => {
-      if (card) return res.send({ data: card });
+      if (card) return res.send(card);
       throw new NotFoundError('Карточки не существует');
     })
     .catch((err) => {
